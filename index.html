@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Customer Orders Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="page-shell">
+    <h1>Customer Orders Dashboard</h1>
+
+    <nav>
+        <a href="index.html" class="active">Dashboard</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
+    </nav>
+
+    <h2>Controls</h2>
+
+    <label for="customerSearch">Search customers</label>
+    <input type="text" id="customerSearch" placeholder="Search by name, ID or country">
+
+    <button type="button" onclick="searchCustomers()">Search</button>
+    <button type="button" onclick="clearSearch()">Clear Search</button>
+    <button type="button" onclick="resetView()">Reset View</button>
+
+    <p id="customerCounter">Counter: 0</p>
+
+    <p class="status"><strong>Status:</strong> Ready</p>
+
+    <hr>
+
+    <h2>📊 Dashboard</h2>
+
+    <h3>👥 Customers</h3>
+
+    <p>
+        Select a customer to view their orders.
+        <strong id="selectedCustomerLabel">Selected customer: none</strong>
+    </p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Customer ID</th>
+                <th>Customer Name</th>
+                <th>Company</th>
+                <th>Country</th>
+            </tr>
+        </thead>
+        <tbody id="customerTableBody"></tbody>
+    </table>
+
+    <p class="small-text">
+        Click a customer row to load their orders.
+    </p>
+
+    <div class="orders-layout">
+        <section class="order-column">
+            <h3>📦 Orders</h3>
+
+            <p id="selectedOrderLabel"><strong>Selected order: none</strong></p>
+
+            <p>Orders for selected customer</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer / Company</th>
+                        <th>Date</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="ordersTableBody"></tbody>
+            </table>
+        </section>
+
+        <section class="order-column">
+            <h3>🧾 Order Details</h3>
+
+            <p>Select an order to see line items.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                        <th>Line Total</th>
+                    </tr>
+                </thead>
+                <tbody id="orderDetailsBody">
+                    <tr class="order-line">
+                        <td><input type="text" value="Example item 2"></td>
+                        <td><input type="number" class="line-qty" value="1" min="0"></td>
+                        <td><input type="number" class="line-price" value="10.00" min="0" step="0.01"></td>
+                        <td class="line-total">£0.00</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>
+                <button type="button" id="addItemButton">Add Item</button>
+                <button type="button" id="removeItemButton" class="cancel">Remove Item</button>
+            </p>
+
+            <p id="orderTotal"><strong>Order total:</strong> £0.00</p>
+        </section>
+    </div>
+
+    <!-- Windows 95 Modal Dialog -->
+    <div id="modalOverlay" class="modal-overlay">
+        <div class="win95-dialog">
+            <div class="win95-title">
+                <span class="win95-title-text" id="modalTitle">Message</span>
+                <div class="win95-close" onclick="closeModal()">×</div>
+            </div>
+            <div class="win95-content" id="modalContent">
+                Operation complete.
+            </div>
+            <div class="win95-buttons">
+                <button class="win95-btn" onclick="closeModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const currencyFormatter = new Intl.NumberFormat('en-GB', {
+            style: 'currency',
+            currency: 'GBP'
+        });
+
+        function showModal(title, message) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalContent').textContent = message;
+            document.getElementById('modalOverlay').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+        }
+
+        const customerData = [
+            {
+                id: 'CUST-001',
+                name: 'Anne Young',
+                company: 'Northstar Office Supplies',
+                country: 'United Kingdom',
+                orders: [
+                    {
+                        id: 'ORD-1001',
+                        customerId: 'CUST-001',
+                        date: '2026-01-12',
+                        items: [
+                            { product: 'Desk Lamp', quantity: 1, price: 45.00 },
+                            { product: 'Notebook Set', quantity: 2, price: 12.50 }
+                        ]
+                    },
+                    {
+                        id: 'ORD-1004',
+                        customerId: 'CUST-001',
+                        date: '2026-02-03',
+                        items: [
+                            { product: 'Office Chair', quantity: 1, price: 120.00 },
+                            { product: 'Monitor Stand', quantity: 1, price: 35.99 }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'CUST-002',
+                name: 'Franco Rodas',
+                company: 'Lumiere Retail Group',
+                country: 'France',
+                orders: [
+                    {
+                        id: 'ORD-1002',
+                        customerId: 'CUST-002',
+                        date: '2026-01-28',
+                        items: [
+                            { product: 'Phone Stand', quantity: 3, price: 18.95 },
+                            { product: 'USB Hub', quantity: 1, price: 29.99 }
+                        ]
+                    },
+                    {
+                        id: 'ORD-1005',
+                        customerId: 'CUST-002',
+                        date: '2026-02-14',
+                        items: [
+                            { product: 'Keyboard', quantity: 2, price: 42.50 },
+                            { product: 'Mouse', quantity: 2, price: 21.00 }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'CUST-003',
+                name: 'Brian Squires',
+                company: 'Rheinland Technology',
+                country: 'Germany',
+                orders: [
+                    {
+                        id: 'ORD-1003',
+                        customerId: 'CUST-003',
+                        date: '2026-02-01',
+                        items: [
+                            { product: 'Laptop Sleeve', quantity: 1, price: 24.99 },
+                            { product: 'Webcam', quantity: 1, price: 68.00 }
+                        ]
+                    },
+                    {
+                        id: 'ORD-1006',
+                        customerId: 'CUST-003',
+                        date: '2026-02-18',
+                        items: [
+                            { product: 'External Hard Drive', quantity: 2, price: 79.00 },
+                            { product: 'Cable Kit', quantity: 1, price: 15.25 }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        let selectedCustomerId = null;
+        let selectedOrderId = null;
+
+        function formatCurrency(value) {
+            return currencyFormatter.format(value);
+        }
+
+        function getCustomerById(customerId) {
+            return customerData.find((customer) => customer.id === customerId) || null;
+        }
+
+        function getSelectedCustomer() {
+            return getCustomerById(selectedCustomerId);
+        }
+
+        function getSelectedOrder(customer) {
+            if (!customer) return null;
+            return customer.orders.find((order) => order.id === selectedOrderId) || null;
+        }
+
+        function createOrderRow() {
+            const row = document.createElement('tr');
+            row.className = 'order-line';
+            row.innerHTML = `
+                <td><input type="text" value="New item"></td>
+                <td><input type="number" class="line-qty" value="1" min="0"></td>
+                <td><input type="number" class="line-price" value="0.00" min="0" step="0.01"></td>
+                <td class="line-total">£0.00</td>
+            `;
+
+            row.querySelectorAll('.line-qty, .line-price').forEach((input) => {
+                input.addEventListener('input', updateOrderTotal);
+            });
+
+            return row;
+        }
+
+        function updateOrderTotal() {
+            const rows = document.querySelectorAll('.order-line');
+            let total = 0;
+
+            rows.forEach((row) => {
+                const quantity = parseFloat(row.querySelector('.line-qty').value) || 0;
+                const unitPrice = parseFloat(row.querySelector('.line-price').value) || 0;
+                const lineTotal = quantity * unitPrice;
+
+                row.querySelector('.line-total').textContent = formatCurrency(lineTotal);
+                total += lineTotal;
+            });
+
+            document.getElementById('orderTotal').innerHTML = '<strong>Order total:</strong> ' + formatCurrency(total);
+        }
+
+        function renderOrderDetails(order) {
+            const detailsBody = document.getElementById('orderDetailsBody');
+
+            if (!order) {
+                detailsBody.innerHTML = '<tr><td colspan="4">Select an order to view line items.</td></tr>';
+                document.getElementById('orderTotal').innerHTML = '<strong>Order total:</strong> £0.00';
+                return;
+            }
+
+            detailsBody.innerHTML = order.items.map((item) => `
+                <tr class="order-line">
+                    <td><input type="text" value="${item.product}"></td>
+                    <td><input type="number" class="line-qty" value="${item.quantity}" min="0"></td>
+                    <td><input type="number" class="line-price" value="${item.price.toFixed(2)}" min="0" step="0.01"></td>
+                    <td class="line-total">${formatCurrency(item.quantity * item.price)}</td>
+                </tr>
+            `).join('');
+
+            detailsBody.querySelectorAll('.line-qty, .line-price').forEach((input) => {
+                input.addEventListener('input', updateOrderTotal);
+            });
+
+            updateOrderTotal();
+        }
+
+        function renderOrdersForCustomer(customer, customers = customerData) {
+            const ordersTableBody = document.getElementById('ordersTableBody');
+
+            if (!customer) {
+                const allOrders = customers.flatMap((orderCustomer) =>
+                    orderCustomer.orders.map((order) => ({ ...order, customer: orderCustomer }))
+                );
+
+                ordersTableBody.innerHTML = allOrders.map(({ customer: orderCustomer, ...order }) => `
+                    <tr class="order-row" data-order-id="${order.id}" data-customer-id="${orderCustomer.id}">
+                        <td>${order.id}</td>
+                        <td>${orderCustomer.name} - ${orderCustomer.company}</td>
+                        <td>${order.date}</td>
+                        <td>${formatCurrency(order.items.reduce((total, item) => total + (item.quantity * item.price), 0))}</td>
+                    </tr>
+                `).join('');
+
+                ordersTableBody.querySelectorAll('.order-row').forEach((row) => {
+                    row.addEventListener('click', () => {
+                        selectedCustomerId = row.dataset.customerId;
+                        selectedOrderId = row.dataset.orderId;
+                        const activeCustomer = getSelectedCustomer();
+                        const activeOrder = getSelectedOrder(activeCustomer);
+                        document.getElementById('selectedCustomerLabel').textContent = `Selected customer: ${activeCustomer ? `${activeCustomer.name} (${activeCustomer.company})` : 'none'}`;
+                        document.getElementById('selectedOrderLabel').innerHTML = `<strong>Selected order:</strong> ${activeOrder ? activeOrder.id : 'none'}`;
+                        renderOrderDetails(activeOrder);
+                    });
+                });
+
+                document.getElementById('selectedOrderLabel').innerHTML = '<strong>Selected order: none</strong>';
+                renderOrderDetails(null);
+                return;
+            }
+
+            ordersTableBody.innerHTML = customer.orders.map((order) => `
+                <tr class="order-row" data-order-id="${order.id}">
+                    <td>${order.id}</td>
+                    <td>${customer.name} - ${customer.company}</td>
+                    <td>${order.date}</td>
+                    <td>${formatCurrency(order.items.reduce((total, item) => total + (item.quantity * item.price), 0))}</td>
+                </tr>
+            `).join('');
+
+            ordersTableBody.querySelectorAll('.order-row').forEach((row) => {
+                row.addEventListener('click', () => {
+                    selectedOrderId = row.dataset.orderId;
+                    const activeCustomer = getSelectedCustomer();
+                    const activeOrder = getSelectedOrder(activeCustomer);
+                    document.getElementById('selectedOrderLabel').innerHTML = `<strong>Selected order:</strong> ${activeOrder ? activeOrder.id : 'none'}`;
+                    renderOrderDetails(activeOrder);
+                });
+            });
+
+            if (!selectedOrderId || !customer.orders.some((order) => order.id === selectedOrderId)) {
+                selectedOrderId = customer.orders[0] ? customer.orders[0].id : null;
+            }
+
+            const activeOrder = getSelectedOrder(customer);
+            document.getElementById('selectedOrderLabel').innerHTML = `<strong>Selected order:</strong> ${activeOrder ? activeOrder.id : 'none'}`;
+            renderOrderDetails(activeOrder);
+        }
+
+        function matchesCustomerSearch(customer, searchTerm) {
+            if (!searchTerm) return true;
+
+            const term = searchTerm.trim().toLowerCase();
+
+            const customerMatches = (
+                customer.id.toLowerCase().includes(term) ||
+                customer.name.toLowerCase().includes(term) ||
+                customer.country.toLowerCase().includes(term)
+            );
+
+            const orderMatches = customer.orders.some((order) => {
+                const orderMatchesText = order.id.toLowerCase().includes(term);
+                const itemMatches = order.items.some((item) =>
+                    item.product.toLowerCase().includes(term)
+                );
+
+                return orderMatchesText || itemMatches;
+            });
+
+            return customerMatches || orderMatches;
+        }
+
+        function renderCustomers(searchTerm = '') {
+            const customerTableBody = document.getElementById('customerTableBody');
+            const filter = searchTerm.trim().toLowerCase();
+
+            const filteredCustomers = customerData.filter((customer) => matchesCustomerSearch(customer, filter));
+
+            customerTableBody.innerHTML = filteredCustomers.map((customer) => `
+                <tr class="customer-row" data-customer-id="${customer.id}">
+                    <td>${customer.id}</td>
+                    <td>${customer.name}</td>
+                    <td>${customer.company}</td>
+                    <td>${customer.country}</td>
+                </tr>
+            `).join('');
+
+            document.getElementById('customerCounter').textContent = `Counter: ${filteredCustomers.length}`;
+
+            customerTableBody.querySelectorAll('.customer-row').forEach((row) => {
+                row.addEventListener('click', () => {
+                    selectedCustomerId = row.dataset.customerId;
+                    const customer = getSelectedCustomer();
+                    document.getElementById('selectedCustomerLabel').textContent = `Selected customer: ${customer ? `${customer.name} (${customer.company})` : 'none'}`;
+                    renderOrdersForCustomer(customer);
+                });
+            });
+
+            if (selectedCustomerId && !filteredCustomers.some((customer) => customer.id === selectedCustomerId)) {
+                selectedCustomerId = null;
+                selectedOrderId = null;
+            }
+
+            const selectedCustomer = getSelectedCustomer();
+            if (selectedCustomer) {
+                document.getElementById('selectedCustomerLabel').textContent = `Selected customer: ${selectedCustomer.name} (${selectedCustomer.company})`;
+                renderOrdersForCustomer(selectedCustomer);
+            } else {
+                document.getElementById('selectedCustomerLabel').textContent = 'Selected customer: none';
+                renderOrdersForCustomer(null, filteredCustomers);
+            }
+        }
+
+        function searchCustomers() {
+            const searchTerm = document.getElementById('customerSearch').value;
+            renderCustomers(searchTerm);
+            document.querySelector('.status').innerHTML = '<strong>Status:</strong> Search applied';
+            showModal('Search Results', 'Search completed. ' + document.getElementById('customerCounter').textContent.replace('Counter: ', '') + ' customers found.');
+        }
+
+        function clearSearch() {
+            document.getElementById('customerSearch').value = '';
+            renderCustomers('');
+            document.querySelector('.status').innerHTML = '<strong>Status:</strong> Search cleared';
+            showModal('Clear Search', 'Search has been cleared. All customers are now displayed.');
+        }
+
+        function resetView() {
+            document.getElementById('customerSearch').value = '';
+            selectedCustomerId = null;
+            selectedOrderId = null;
+            renderCustomers('');
+            document.querySelector('.status').innerHTML = '<strong>Status:</strong> Ready';
+            showModal('View Reset', 'The view has been reset to its initial state.');
+        }
+
+        document.getElementById('customerSearch').addEventListener('input', (event) => {
+            renderCustomers(event.target.value);
+            document.querySelector('.status').innerHTML = '<strong>Status:</strong> Searching...';
+        });
+
+        document.getElementById('addItemButton').addEventListener('click', () => {
+            document.getElementById('orderDetailsBody').appendChild(createOrderRow());
+            updateOrderTotal();
+            showModal('Item Added', 'A new item row has been added to the order details.');
+        });
+
+        document.getElementById('removeItemButton').addEventListener('click', () => {
+            const detailsBody = document.getElementById('orderDetailsBody');
+            const rows = detailsBody.querySelectorAll('.order-line');
+            if (rows.length > 1) {
+                detailsBody.removeChild(rows[rows.length - 1]);
+                updateOrderTotal();
+                showModal('Item Removed', 'The last item row has been removed from the order details.');
+            } else {
+                showModal('Cannot Remove', 'You must keep at least one item in the order.');
+            }
+        });
+
+        renderCustomers('');
+        updateOrderTotal();
+    </script>
+    </div>
+</body>
+</html>

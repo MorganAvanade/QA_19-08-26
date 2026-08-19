@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Contact Us</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="page-shell">
+    <nav>
+        <a href="index.html">Dashboard</a>
+        <a href="about.html">About</a>
+        <a href="contact.html" class="active">Contact</a>
+    </nav>
+
+    <h1>Contact Us</h1>
+
+    <p>Please fill out the form below to get in touch with us. We will respond to your inquiry as soon as possible.</p>
+
+    <h2>📝 Contact Form</h2>
+
+    <form id="contactForm">
+        <div class="form-group">
+            <label for="customerName">Full Name *</label>
+            <input type="text" id="customerName" name="customerName" required>
+        </div>
+
+        <div class="form-group">
+            <label for="email">Email Address *</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+
+        <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" name="phone">
+        </div>
+
+        <div class="form-group">
+            <label for="customerId">Customer ID (if applicable)</label>
+            <input type="text" id="customerId" name="customerId">
+        </div>
+
+        <div class="form-group">
+            <label for="reason">Reason for Contacting *</label>
+            <textarea id="reason" name="reason" required placeholder="Please describe your inquiry or reason for contacting us..."></textarea>
+        </div>
+
+        <button type="submit" onclick="submitForm(event)">Submit</button>
+        <button type="reset" class="cancel" onclick="resetForm()">Clear Form</button>
+    </form>
+
+    <p id="statusMessage" class="status-box"></p>
+
+    <script>
+        function submitForm(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('customerName').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const customerId = document.getElementById('customerId').value;
+            const reason = document.getElementById('reason').value;
+
+            // Basic validation
+            if (!name || !email || !reason) {
+                showStatus('Please fill out all required fields.', 'error');
+                showModal('Validation Error', 'Please fill out all required fields marked with *.');
+                return;
+            }
+
+            // Email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showStatus('Please enter a valid email address.', 'error');
+                showModal('Invalid Email', 'Please enter a valid email address.');
+                return;
+            }
+
+            // Simulate form submission
+            showStatus('Thank you for contacting us! We will get back to you shortly at ' + email, 'success');
+            showModal('Form Submitted', 'Thank you for contacting us! We will get back to you shortly at ' + email);
+            
+            // Clear form after successful submission
+            setTimeout(function() {
+                document.getElementById('contactForm').reset();
+                document.getElementById('statusMessage').style.display = 'none';
+                closeModal();
+            }, 3000);
+        }
+
+        function resetForm() {
+            document.getElementById('contactForm').reset();
+            document.getElementById('statusMessage').style.display = 'none';
+        }
+
+        function showStatus(message, type) {
+        function showStatus(message, type) {
+            const statusElement = document.getElementById('statusMessage');
+            statusElement.textContent = message;
+            statusElement.className = 'status-box ' + type;
+            statusElement.style.display = 'block';
+        }
+
+        function showModal(title, message) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalContent').textContent = message;
+            document.getElementById('modalOverlay').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+        }
+    </script>
+
+    <!-- Windows 95 Modal Dialog -->
+    <div id="modalOverlay" class="modal-overlay">
+        <div class="win95-dialog">
+            <div class="win95-title">
+                <span class="win95-title-text" id="modalTitle">Message</span>
+                <div class="win95-close" onclick="closeModal()">×</div>
+            </div>
+            <div class="win95-content" id="modalContent">
+                Operation complete.
+            </div>
+            <div class="win95-buttons">
+                <button class="win95-btn" onclick="closeModal()">OK</button>
+            </div>
+        </div>
+    </div>
+    </div>
+</body>
+</html>
